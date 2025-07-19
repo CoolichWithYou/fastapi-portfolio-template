@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Дерево категорий</h2>
+<ul>
+    {% for cat in categories %}
+    <li>
+        <a href="/category/{{ cat.id }}">{{ cat.name }}</a>
+        {% if cat.children %}
+        <ul>
+            {% for sub in cat.children %}
+            <li><a href="/category/{{ sub.id }}">{{ sub.name }}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+<h3>Добавить категорию</h3>
+<form method="post" action="/add">
+    <select name="parent_id">
+        <option value="">— без родителя —</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}">{{ cat.name }}</option>
+        {% endfor %}
+    </select>
+    <input name="name" maxlength="50" required>
+    <button type="submit">Добавить</button>
+</form>
+{% endblock %}

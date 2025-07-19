@@ -1,0 +1,30 @@
+from typing import Optional, List, ForwardRef
+
+from sqlmodel import Field, SQLModel, Relationship
+
+CategoryRef = ForwardRef("Category")
+
+
+class CategoryBase(SQLModel):
+    name: str = Field(max_length=40)
+    parent_id: Optional[int] = Field(default=None, foreign_key="category.id")
+
+
+class Category(CategoryBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    parent: Optional[CategoryRef] = Relationship(
+        back_populates="children",
+        sa_relationship_kwargs={"remote_side": "Category.id"}
+    )
+
+    children: List[CategoryRef] = Relationship(
+        back_populates="parent"
+    )
+
+class CategoryUpdate(CategoryBase):
+    id: Optional[int] = Field(default=None, foreign_key="category.id")
+    name: str = Field(max_length=40)
+
+class CategoryCreate(CategoryBase):
+    pass

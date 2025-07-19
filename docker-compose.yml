@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    container_name: category_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    env_file:
+      .env
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
