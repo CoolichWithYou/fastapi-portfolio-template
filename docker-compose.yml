@@ -15,7 +15,7 @@ services:
       .env
   fastapi:
     build: ./server
-    container_name: clinic_server
+    container_name: category_server
     depends_on:
       - db
     ports:
