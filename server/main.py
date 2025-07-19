@@ -1,13 +1,13 @@
-from fastapi import Depends, FastAPI, HTTPException, Request, Form
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
-from fastapi.templating import Jinja2Templates
+from typing import Optional
+
+from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlmodel import Session
 
 from server import crud
 from server.db import engine
-from server.schema import *
+from server.schema import CategoryCreate
 from server.settings import Settings
 
 settings = Settings()
@@ -30,14 +30,16 @@ def health():
 @app.get("/")
 async def index(request: Request, session: Session = Depends(get_session)):
     categories = await crud.get_category_tree(session)
-    return templates.TemplateResponse("index.html", {"request": request, "categories": categories})
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "categories": categories}
+    )
 
 
 @app.post("/add")
 async def add_category(
-        name: str = Form(...),
-        parent_id: Optional[str] = Form(None),
-        session: Session = Depends(get_session)
+    name: str = Form(...),
+    parent_id: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
 ):
     pid = int(parent_id) if parent_id else None
 
@@ -47,28 +49,33 @@ async def add_category(
 
 
 @app.get("/category/{category_id}")
-async def view_category(request: Request, category_id: int, session: Session = Depends(get_session)):
+async def view_category(
+    request: Request, category_id: int, session: Session = Depends(get_session)
+):
     category = await crud.get_category(session, category_id)
     breadcrumbs = []
     current = category
     while current:
         breadcrumbs.insert(0, current)
         current = current.parent
-    return templates.TemplateResponse("category.html",
-                                      {"request": request, "category": category, "breadcrumbs": breadcrumbs})
+    return templates.TemplateResponse(
+        "category.html",
+        {"request": request, "category": category, "breadcrumbs": breadcrumbs},
+    )
 
 
 @app.post("/category/{category_id}/update")
 async def update_category(
-        category_id,
-        name: str = Form(...),
-        session: Session = Depends(get_session)
+    category_id, name: str = Form(...), session: Session = Depends(get_session)
 ):
     await crud.update_category(session, category_id, name)
     return RedirectResponse(f"/category/{category_id}", status_code=303)
 
 
 @app.post("/category/{category_id}/delete")
-async def delete_category(category_id: int, session: Session = Depends(get_session)):
+async def delete_category(
+    category_id: int,
+    session: Session = Depends(get_session),
+):
     await crud.delete_category(session, category_id)
     return RedirectResponse("/", status_code=303)

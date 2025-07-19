@@ -1,13 +1,13 @@
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
-from server.schema import Category, CategoryCreate, CategoryUpdate
+from server.schema import Category, CategoryCreate
 
 
 async def get_category_tree(session: Session):
     stmt = (
         select(Category)
-        .where(Category.parent_id == None)
+        .where(Category.parent_id is None)
         .options(selectinload(Category.children))
     )
     result = session.exec(stmt)

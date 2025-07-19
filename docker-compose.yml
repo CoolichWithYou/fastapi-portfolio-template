@@ -13,7 +13,17 @@ services:
       - app-network
     env_file:
       .env
-
+  fastapi:
+    build: ./server
+    container_name: clinic_server
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    env_file:
+      .env.example
 volumes:
   pgdata:
 

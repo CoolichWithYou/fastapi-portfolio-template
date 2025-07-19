@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    container_name: category_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB:        ${POSTGRES_DB}
+      POSTGRES_USER:      ${POSTGRES_USER}
+      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
+    networks:
+      - app-network
+  fastapi:
+    build: ./server
+    container_name: category_server
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    environment:
+      DB_HOST:            ${DB_HOST}
+      DB_PORT:            ${DB_PORT}
+      POSTGRES_DB:        ${POSTGRES_DB}
+      POSTGRES_USER:      ${POSTGRES_USER}
+      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:

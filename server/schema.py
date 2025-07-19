@@ -1,6 +1,6 @@
-from typing import Optional, List, ForwardRef
+from typing import ForwardRef, List, Optional
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 CategoryRef = ForwardRef("Category")
 
@@ -15,16 +15,16 @@ class Category(CategoryBase, table=True):
 
     parent: Optional[CategoryRef] = Relationship(
         back_populates="children",
-        sa_relationship_kwargs={"remote_side": "Category.id"}
+        sa_relationship_kwargs={"remote_side": "Category.id"},
     )
 
-    children: List[CategoryRef] = Relationship(
-        back_populates="parent"
-    )
+    children: List[CategoryRef] = Relationship(back_populates="parent")
+
 
 class CategoryUpdate(CategoryBase):
     id: Optional[int] = Field(default=None, foreign_key="category.id")
     name: str = Field(max_length=40)
+
 
 class CategoryCreate(CategoryBase):
     pass
