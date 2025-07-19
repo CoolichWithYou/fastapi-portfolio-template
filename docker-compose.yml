@@ -23,7 +23,7 @@ services:
     networks:
       - app-network
     env_file:
-      .env.example
+      .env
 volumes:
   pgdata:
 

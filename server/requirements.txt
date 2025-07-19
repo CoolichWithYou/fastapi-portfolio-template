@@ -15,3 +15,5 @@ trio==0.30.0
 sqlmodel==0.0.24
 psycopg2-binary==2.9.10
 alembic==1.16.4
+Jinja2==3.1.6
+python-multipart==0.0.20
