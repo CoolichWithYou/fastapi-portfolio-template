@@ -2,16 +2,12 @@
 {% block content %}
 <h2>Дерево категорий</h2>
 <ul>
-    {% for cat in categories %}
+    {% for category in categories %}
     <li>
-        <a href="/category/{{ cat.id }}">{{ cat.name }}</a>
-        {% if cat.children %}
-        <ul>
-            {% for sub in cat.children %}
-            <li><a href="/category/{{ sub.id }}">{{ sub.name }}</a></li>
-            {% endfor %}
-        </ul>
-        {% endif %}
+        {% for i in range(category.level) %}
+            {{ indent|safe }}
+        {% endfor %}
+        <a href="/category/{{ category.id }}">{{ category.name }}</a>
     </li>
     {% endfor %}
 </ul>

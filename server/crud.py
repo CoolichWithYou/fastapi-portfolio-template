@@ -1,8 +1,11 @@
-from sqlalchemy.orm import selectinload
+from typing import List
+
+from sqlalchemy import func, Integer, join, String, literal_column
+from sqlalchemy.orm import selectinload, aliased
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from server.schema import Category, CategoryCreate
+from server.schema import Category, CategoryCreate, CategoryTree
 
 
 async def get_category_tree(session: AsyncSession):
@@ -13,6 +16,44 @@ async def get_category_tree(session: AsyncSession):
     )
     result = await session.exec(stmt)
     return result.all()
+
+
+async def get_breadcrumbs(session: AsyncSession, category_id: int) -> List[Category]:
+    cte = (
+        select(
+            Category.id,
+            Category.name,
+            Category.parent_id,
+            func.cast(Category.id, String).label("path"),
+            literal_column('0').label("level")
+        )
+        .where(Category.id == category_id)
+        .cte(name="breadcrumbs", recursive=True)
+    )
+
+    cat_alias = aliased(Category, name="c")
+    cte_alias = aliased(cte, name="b")
+
+    recursive_part = (
+        select(
+            cat_alias.id,
+            cat_alias.name,
+            cat_alias.parent_id,
+            func.concat(cte_alias.c.path, ',', cat_alias.id).label("path"),
+            cte_alias.c.level + 1
+        )
+        .join(cte_alias, cat_alias.id == cte_alias.c.parent_id)
+    )
+
+    cte = cte.union_all(recursive_part)
+
+    full_query = (
+        select(cte.c.id, cte.c.name)
+        .order_by(cte.c.level.desc())
+    )
+
+    result = await session.execute(full_query)
+    return [Category(id=row.id, name=row.name) for row in result.all()]
 
 
 async def get_category(session: AsyncSession, category_id: int):
@@ -31,6 +72,52 @@ async def create_category(session: AsyncSession, category: CategoryCreate):
     await session.commit()
     await session.refresh(category)
     return category
+
+
+async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
+    cte = (
+        select(
+            Category.id,
+            Category.name,
+            Category.parent_id,
+            func.cast(0, Integer).label("level")
+        )
+        .where(Category.parent_id.is_(None))
+        .cte(name="CategoryTree", recursive=True)
+    )
+
+    c = aliased(Category, name="c")
+    ct = aliased(cte, name="ct")
+
+    recursive_part = (
+        select(
+            c.id,
+            c.name,
+            c.parent_id,
+            (ct.c.level + 1).label("level")
+        )
+        .select_from(join(c, ct, c.parent_id == ct.c.id))
+    )
+
+    cte = cte.union_all(recursive_part)
+
+    full_query = (
+        select(
+            cte.c.id,
+            cte.c.name,
+            cte.c.parent_id,
+            cte.c.level
+        )
+        .order_by(cte.c.level, cte.c.name)
+    )
+
+    result = await session.exec(full_query)
+    return [CategoryTree(
+        id=row.id,
+        name=row.name,
+        parent_id=row.parent_id,
+        level=row.level
+    ) for row in result.all()]
 
 
 async def update_category(session: AsyncSession, category_id: int, name: str):

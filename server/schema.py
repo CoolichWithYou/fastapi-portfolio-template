@@ -7,7 +7,7 @@ CategoryRef = ForwardRef("Category")
 
 class CategoryBase(SQLModel):
     name: str = Field(max_length=40)
-    parent_id: Optional[int] = Field(default=None, foreign_key="category.id")
+    parent_id: Optional[int] = Field(default=None, foreign_key="category.id", index=True)
 
 
 class Category(CategoryBase, table=True):
@@ -18,7 +18,12 @@ class Category(CategoryBase, table=True):
         sa_relationship_kwargs={"remote_side": "Category.id"},
     )
 
-    children: List[CategoryRef] = Relationship(back_populates="parent")
+    children: List[CategoryRef] = Relationship(back_populates="parent", cascade_delete=True)
+
+
+class CategoryTree(CategoryBase):
+    id: int
+    level: int
 
 
 class CategoryUpdate(CategoryBase):

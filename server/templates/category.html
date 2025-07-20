@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <p>Вы находитесь:
+        <div>
     {% for crumb in breadcrumbs %}
-    <a href="/category/{{ crumb.id }}">{{ crumb.name }}</a> /
-    {% endfor %}
+            {% if loop.last %}
+                {{ crumb.name }}
+            {% else %}
+    <a href="/category/{{ crumb.id }}">{{ crumb.name }} -> </a>
+
+            {% endif %}
+        {% endfor %}
+</div>
 </p>
 
 <h2>{{ category.name }}</h2>
