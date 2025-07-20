@@ -1,6 +1,6 @@
-from typing import Optional, List
+from typing import List, Optional
 
-from fastapi import Depends, FastAPI, Form, Request, HTTPException
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -8,7 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from server import crud
 from server.db import engine
-from server.schema import CategoryCreate, CategoryTree, Category
+from server.schema import Category, CategoryCreate, CategoryTree
 from server.settings import Settings
 
 settings = Settings()
@@ -29,24 +29,28 @@ def health():
 
 
 @app.get("/")
-async def index(request: Request, session: AsyncSession = Depends(get_session)):
-    categories: List[CategoryTree] = await crud.get_categories_tree_orm(session)
+async def index(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    categories: List[CategoryTree] = await crud.get_categories_tree_orm(
+        session,
+    )
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "categories": categories,
-            # Используем безопасный HTML-отступ
-            "indent": Markup("&nbsp;&nbsp;&nbsp;&nbsp;")
-        }
+            "indent": Markup("&nbsp;&nbsp;&nbsp;&nbsp;"),
+        },
     )
 
 
 @app.post("/add")
 async def add_category(
-        name: str = Form(...),
-        parent_id: Optional[str] = Form(None),
-        session: AsyncSession = Depends(get_session),
+    name: str = Form(...),
+    parent_id: Optional[str] = Form(None),
+    session: AsyncSession = Depends(get_session),
 ):
     pid = int(parent_id) if parent_id else None
 
@@ -57,7 +61,9 @@ async def add_category(
 
 @app.get("/category/{category_id}")
 async def view_category(
-        request: Request, category_id: int, session: AsyncSession = Depends(get_session)
+    request: Request,
+    category_id: int,
+    session: AsyncSession = Depends(get_session),
 ):
     current_category = await session.get(Category, category_id)
     if not current_category:
@@ -70,14 +76,16 @@ async def view_category(
         {
             "request": request,
             "category": current_category,
-            "breadcrumbs": breadcrumbs
-        }
+            "breadcrumbs": breadcrumbs,
+        },
     )
 
 
 @app.post("/category/{category_id}/update")
 async def update_category(
-        category_id: int, name: str = Form(...), session: AsyncSession = Depends(get_session)
+    category_id: int,
+    name: str = Form(...),
+    session: AsyncSession = Depends(get_session),
 ):
     await crud.update_category(session, category_id, name)
     return RedirectResponse(f"/category/{category_id}", status_code=303)
@@ -85,8 +93,8 @@ async def update_category(
 
 @app.post("/category/{category_id}/delete")
 async def delete_category(
-        category_id: int,
-        session: AsyncSession = Depends(get_session),
+    category_id: int,
+    session: AsyncSession = Depends(get_session),
 ):
     await crud.delete_category(session, category_id)
     return RedirectResponse("/", status_code=303)
