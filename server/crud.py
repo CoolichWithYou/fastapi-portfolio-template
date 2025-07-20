@@ -1,17 +1,28 @@
+import functools
 from typing import List
 
-from sqlalchemy import Integer, String, func, join, literal_column
+from sqlalchemy import Integer, String, func, join, literal_column, select
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import aliased, selectinload
-from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from server import redis_
 from server.schema import Category, CategoryCreate, CategoryTree
 
 
+def delete_cache(func_):
+    @functools.wraps(func_)
+    async def wrapper(*args, **kwargs):
+        result = await func_(*args, **kwargs)
+        await redis_.redis_client.delete('categories')
+        return result
+
+    return wrapper
+
+
 async def get_breadcrumbs(
-    session: AsyncSession,
-    category_id: int,
+        session: AsyncSession,
+        category_id: int,
 ) -> List[Category]:
     cte = (
         select(
@@ -54,9 +65,10 @@ async def get_category(session: AsyncSession, category_id: int):
     return result.one()
 
 
+@delete_cache
 async def create_category(
-    session: AsyncSession,
-    category: CategoryCreate,
+        session: AsyncSession,
+        category: CategoryCreate,
 ):
     category = Category.model_validate(category)
     session.add(category)
@@ -66,7 +78,7 @@ async def create_category(
 
 
 async def get_categories_tree_orm(
-    session: AsyncSession,
+        session: AsyncSession,
 ) -> List[CategoryTree]:
     cte = (
         select(
@@ -111,10 +123,11 @@ async def get_categories_tree_orm(
     ]
 
 
+@delete_cache
 async def update_category(
-    session: AsyncSession,
-    category_id: int,
-    name: str,
+        session: AsyncSession,
+        category_id: int,
+        name: str,
 ):
     category = await session.get(Category, category_id)
     category.name = name
@@ -122,6 +135,7 @@ async def update_category(
     return category
 
 
+@delete_cache
 async def delete_category(session: AsyncSession, category_id: int):
     category = await session.get(Category, category_id)
     await session.delete(category)
