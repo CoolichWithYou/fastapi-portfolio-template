@@ -7,7 +7,8 @@ from sqlmodel import SQLModel
 
 from alembic import context
 
-load_dotenv(".env")
+if os.path.exists(".env"):
+    load_dotenv(".env")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
