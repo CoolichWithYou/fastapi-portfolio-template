@@ -52,7 +52,7 @@ async def get_breadcrumbs(session: AsyncSession, category_id: int) -> List[Categ
         .order_by(cte.c.level.desc())
     )
 
-    result = await session.execute(full_query)
+    result = await session.exec(full_query)
     return [Category(id=row.id, name=row.name) for row in result.all()]
 
 
@@ -74,13 +74,16 @@ async def create_category(session: AsyncSession, category: CategoryCreate):
     return category
 
 
+from sqlalchemy.dialects.postgresql import array
+
 async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
     cte = (
         select(
             Category.id,
             Category.name,
             Category.parent_id,
-            func.cast(0, Integer).label("level")
+            func.cast(0, Integer).label("level"),
+            array([Category.id]).label("path")
         )
         .where(Category.parent_id.is_(None))
         .cte(name="CategoryTree", recursive=True)
@@ -94,7 +97,8 @@ async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
             c.id,
             c.name,
             c.parent_id,
-            (ct.c.level + 1).label("level")
+            (ct.c.level + 1).label("level"),
+            ct.c.path.concat(array([c.id])).label("path")
         )
         .select_from(join(c, ct, c.parent_id == ct.c.id))
     )
@@ -106,18 +110,22 @@ async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
             cte.c.id,
             cte.c.name,
             cte.c.parent_id,
-            cte.c.level
+            cte.c.level,
+            cte.c.path
         )
-        .order_by(cte.c.level, cte.c.name)
+        .order_by(cte.c.path)
     )
 
     result = await session.exec(full_query)
+    rows = result.all()
+
     return [CategoryTree(
         id=row.id,
         name=row.name,
         parent_id=row.parent_id,
         level=row.level
-    ) for row in result.all()]
+    ) for row in rows]
+
 
 
 async def update_category(session: AsyncSession, category_id: int, name: str):
