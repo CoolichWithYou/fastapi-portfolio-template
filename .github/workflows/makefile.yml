@@ -35,7 +35,7 @@ jobs:
         run: sudo apt-get install docker-compose -y
 
       - name: compose up
-        run: docker-compose -f docker-compose.prod.yml up --build -d db fastapi
+        run: docker-compose -f docker-compose.prod.yml up --build -d
 
       - name: wait db launch
         run: |
