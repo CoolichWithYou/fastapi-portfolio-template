@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from server import crud
 from server.db import engine
@@ -13,8 +13,8 @@ from server.settings import Settings
 settings = Settings()
 
 
-def get_session():
-    with Session(engine) as session:
+async def get_session() -> AsyncSession:
+    async with AsyncSession(engine) as session:
         yield session
 
 
@@ -28,7 +28,7 @@ def health():
 
 
 @app.get("/")
-async def index(request: Request, session: Session = Depends(get_session)):
+async def index(request: Request, session: AsyncSession = Depends(get_session)):
     categories = await crud.get_category_tree(session)
     return templates.TemplateResponse(
         "index.html", {"request": request, "categories": categories}
@@ -39,7 +39,7 @@ async def index(request: Request, session: Session = Depends(get_session)):
 async def add_category(
     name: str = Form(...),
     parent_id: Optional[str] = Form(None),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     pid = int(parent_id) if parent_id else None
 
@@ -50,7 +50,7 @@ async def add_category(
 
 @app.get("/category/{category_id}")
 async def view_category(
-    request: Request, category_id: int, session: Session = Depends(get_session)
+    request: Request, category_id: int, session: AsyncSession = Depends(get_session)
 ):
     category = await crud.get_category(session, category_id)
     breadcrumbs = []
@@ -66,7 +66,7 @@ async def view_category(
 
 @app.post("/category/{category_id}/update")
 async def update_category(
-    category_id, name: str = Form(...), session: Session = Depends(get_session)
+    category_id: int, name: str = Form(...), session: AsyncSession = Depends(get_session)
 ):
     await crud.update_category(session, category_id, name)
     return RedirectResponse(f"/category/{category_id}", status_code=303)
@@ -75,7 +75,7 @@ async def update_category(
 @app.post("/category/{category_id}/delete")
 async def delete_category(
     category_id: int,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     await crud.delete_category(session, category_id)
     return RedirectResponse("/", status_code=303)
