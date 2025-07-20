@@ -24,4 +24,4 @@ prod_test:
 
 prod_migrate:
 	@echo "Applying migrations in alembic/versions..."
-	PYTHONPATH=/ python -m alembic -c /server/alembic.ini upgrade head
+	cd ../ && alembic -c /server/alembic.ini upgrade head
