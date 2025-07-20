@@ -1,9 +1,9 @@
 import functools
 from typing import List
 
-from sqlalchemy import Integer, String, func, join, literal_column, select
+from sqlalchemy import Integer, func, join, select
 from sqlalchemy.dialects.postgresql import array
-from sqlalchemy.orm import aliased, selectinload
+from sqlalchemy.orm import aliased
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from server import redis_
@@ -14,61 +14,29 @@ def delete_cache(func_):
     @functools.wraps(func_)
     async def wrapper(*args, **kwargs):
         result = await func_(*args, **kwargs)
-        await redis_.redis_client.delete('categories')
+        await redis_.redis_client.delete("categories")
         return result
 
     return wrapper
 
 
-async def get_breadcrumbs(
-        session: AsyncSession,
-        category_id: int,
-) -> List[Category]:
-    cte = (
-        select(
-            Category.id,
-            Category.name,
-            Category.parent_id,
-            func.cast(Category.id, String).label("path"),
-            literal_column("0").label("level"),
-        )
-        .where(Category.id == category_id)
-        .cte(name="breadcrumbs", recursive=True)
-    )
+async def get_breadcrumbs(tree, category_id: int) -> List[Category]:
+    by_id = {node.id: node for node in tree}
 
-    cat_alias = aliased(Category, name="c")
-    cte_alias = aliased(cte, name="b")
+    breadcrumbs = []
+    current = by_id.get(category_id)
 
-    recursive_part = select(
-        cat_alias.id,
-        cat_alias.name,
-        cat_alias.parent_id,
-        func.concat(cte_alias.c.path, ",", cat_alias.id).label("path"),
-        cte_alias.c.level + 1,
-    ).join(cte_alias, cat_alias.id == cte_alias.c.parent_id)
+    while current:
+        breadcrumbs.append(current)
+        current = by_id.get(current.parent_id)
 
-    cte = cte.union_all(recursive_part)
-
-    full_query = select(cte.c.id, cte.c.name).order_by(cte.c.level.desc())
-
-    result = await session.exec(full_query)
-    return [Category(id=row.id, name=row.name) for row in result.all()]
-
-
-async def get_category(session: AsyncSession, category_id: int):
-    stmt = (
-        select(Category)
-        .where(Category.id == category_id)
-        .options(selectinload(Category.parent))
-    )
-    result = await session.exec(stmt)
-    return result.one()
+    return list(reversed(breadcrumbs))
 
 
 @delete_cache
 async def create_category(
-        session: AsyncSession,
-        category: CategoryCreate,
+    session: AsyncSession,
+    category: CategoryCreate,
 ):
     category = Category.model_validate(category)
     session.add(category)
@@ -78,7 +46,7 @@ async def create_category(
 
 
 async def get_categories_tree_orm(
-        session: AsyncSession,
+    session: AsyncSession,
 ) -> List[CategoryTree]:
     cte = (
         select(
@@ -125,9 +93,9 @@ async def get_categories_tree_orm(
 
 @delete_cache
 async def update_category(
-        session: AsyncSession,
-        category_id: int,
-        name: str,
+    session: AsyncSession,
+    category_id: int,
+    name: str,
 ):
     category = await session.get(Category, category_id)
     category.name = name

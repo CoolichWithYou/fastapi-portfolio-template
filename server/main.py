@@ -1,7 +1,7 @@
 import json
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -13,7 +13,6 @@ from server.schema import Category, CategoryCreate, CategoryTree
 from server.settings import Settings
 
 settings = Settings()
-
 
 
 async def get_session() -> AsyncSession:
@@ -32,17 +31,19 @@ def health():
 
 @app.get("/")
 async def index(
-        request: Request,
-        session: AsyncSession = Depends(get_session),
+    request: Request,
+    session: AsyncSession = Depends(get_session),
 ):
-    cached = await redis_.redis_client.get('categories')
+    cached = await redis_.redis_client.get("categories")
     if cached:
         raw_categories = json.loads(cached)
         categories = [CategoryTree(**item) for item in raw_categories]
     else:
-        categories: List[CategoryTree] = await crud.get_categories_tree_orm(session)
+        categories: List[CategoryTree] = await crud.get_categories_tree_orm(
+            session,
+        )
         categories_json = json.dumps([cat.model_dump() for cat in categories])
-        await redis_.redis_client.set('categories', categories_json)
+        await redis_.redis_client.set("categories", categories_json)
 
     return templates.TemplateResponse(
         "index.html",
@@ -56,9 +57,9 @@ async def index(
 
 @app.post("/add")
 async def add_category(
-        name: str = Form(...),
-        parent_id: Optional[str] = Form(None),
-        session: AsyncSession = Depends(get_session),
+    name: str = Form(...),
+    parent_id: Optional[str] = Form(None),
+    session: AsyncSession = Depends(get_session),
 ):
     pid = int(parent_id) if parent_id else None
 
@@ -69,15 +70,25 @@ async def add_category(
 
 @app.get("/category/{category_id}")
 async def view_category(
-        request: Request,
-        category_id: int,
-        session: AsyncSession = Depends(get_session),
+    request: Request,
+    category_id: int,
+    session: AsyncSession = Depends(get_session),
 ):
     current_category = await session.get(Category, category_id)
-    if not current_category:
-        raise HTTPException(status_code=404)
 
-    breadcrumbs = await crud.get_breadcrumbs(session, category_id)
+    cached = await redis_.redis_client.get("categories")
+
+    if cached:
+        raw_categories = json.loads(cached)
+        categories = [CategoryTree(**item) for item in raw_categories]
+    else:
+        categories: List[CategoryTree] = await crud.get_categories_tree_orm(
+            session,
+        )
+        categories_json = json.dumps([cat.model_dump() for cat in categories])
+        await redis_.redis_client.set("categories", categories_json)
+
+    breadcrumbs = await crud.get_breadcrumbs(categories, category_id)
 
     return templates.TemplateResponse(
         "category.html",
@@ -91,9 +102,9 @@ async def view_category(
 
 @app.post("/category/{category_id}/update")
 async def update_category(
-        category_id: int,
-        name: str = Form(...),
-        session: AsyncSession = Depends(get_session),
+    category_id: int,
+    name: str = Form(...),
+    session: AsyncSession = Depends(get_session),
 ):
     await crud.update_category(session, category_id, name)
     return RedirectResponse(f"/category/{category_id}", status_code=303)
@@ -101,8 +112,8 @@ async def update_category(
 
 @app.post("/category/{category_id}/delete")
 async def delete_category(
-        category_id: int,
-        session: AsyncSession = Depends(get_session),
+    category_id: int,
+    session: AsyncSession = Depends(get_session),
 ):
     await crud.delete_category(session, category_id)
     return RedirectResponse("/", status_code=303)
