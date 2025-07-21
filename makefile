@@ -4,13 +4,13 @@ SRC=. tests
 
 lint:
 	@echo "Running isort..."
-	isort $(SRC)
+	cd server && isort $(SRC)
 
 	@echo "Running black..."
-	black $(SRC)
+	cd server && black $(SRC)
 
 	@echo "Running flake8..."
-	flake8 $(SRC)
+	cd server && flake8 $(SRC)
 
 up:
 	sudo docker compose up --build
@@ -18,10 +18,12 @@ up:
 down:
 	sudo docker compose down
 
-prod_test:
+test:
 	@echo "Running tests with pytest..."
+	sudo docker compose up --build -d db && \
+	export $$(grep -v '^#' .env | xargs) && \
 	pytest --cache-clear
 
-prod_migrate:
+migrate:
 	@echo "Applying migrations in alembic/versions..."
-	cd ../ && alembic -c /server/alembic.ini upgrade head
+	alembic -c ./server/alembic.ini upgrade head
