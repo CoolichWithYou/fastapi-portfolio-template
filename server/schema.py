@@ -6,7 +6,7 @@ CategoryRef = ForwardRef("Category")
 
 
 class CategoryBase(SQLModel):
-    name: str = Field(max_length=40)
+    name: str = Field(max_length=50)
     parent_id: Optional[int] = Field(
         default=None, foreign_key="category.id", index=True
     )
