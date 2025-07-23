@@ -1,11 +1,10 @@
-import json
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import Session
 from starlette.responses import HTMLResponse
 
 from server import crud
@@ -17,8 +16,8 @@ from server.settings import Settings
 settings = Settings()
 
 
-async def get_session() -> AsyncSession:
-    async with AsyncSession(engine) as session:
+def get_session():
+    with Session(engine) as session:
         yield session
 
 
@@ -33,9 +32,9 @@ def health():
 
 @app.post("/add")
 async def add_category(
-        name: str = Form(...),
-        parent_id: Optional[str] = Form(None),
-        session: AsyncSession = Depends(get_session),
+    name: str = Form(...),
+    parent_id: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
 ):
     pid = int(parent_id) if parent_id else None
 
@@ -45,7 +44,7 @@ async def add_category(
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, session: AsyncSession = Depends(get_session)):
+async def index(request: Request, session: Session = Depends(get_session)):
     categories = await get_categories_cached(session)
     return templates.TemplateResponse(
         "index.html",
@@ -59,11 +58,11 @@ async def index(request: Request, session: AsyncSession = Depends(get_session)):
 
 @app.get("/category/{category_id}", response_class=HTMLResponse)
 async def view_category(
-        request: Request,
-        category_id: int,
-        session: AsyncSession = Depends(get_session),
+    request: Request,
+    category_id: int,
+    session: Session = Depends(get_session),
 ):
-    current_category = await session.get(Category, category_id)
+    current_category = session.get(Category, category_id)
     categories = await get_categories_cached(session)
     breadcrumbs = await crud.get_breadcrumbs(categories, category_id)
     return templates.TemplateResponse(
@@ -78,9 +77,9 @@ async def view_category(
 
 @app.post("/category/{category_id}/update")
 async def update_category(
-        category_id: int,
-        name: str = Form(...),
-        session: AsyncSession = Depends(get_session),
+    category_id: int,
+    name: str = Form(...),
+    session: Session = Depends(get_session),
 ):
     await crud.update_category(session, category_id, name)
     return RedirectResponse(f"/category/{category_id}", status_code=303)
@@ -88,8 +87,8 @@ async def update_category(
 
 @app.post("/category/{category_id}/delete")
 async def delete_category(
-        category_id: int,
-        session: AsyncSession = Depends(get_session),
+    category_id: int,
+    session: Session = Depends(get_session),
 ):
     await crud.delete_category(session, category_id)
     return RedirectResponse("/", status_code=303)
