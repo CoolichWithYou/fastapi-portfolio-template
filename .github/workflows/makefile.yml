@@ -20,6 +20,7 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
 
 
     steps:
@@ -45,10 +46,10 @@ jobs:
           done
 
       - name: Apply migrations
-        run: docker exec category_server make -C /server prod_migrate
+        run: docker exec category_server cd ../ && alembic -c /server/alembic.ini upgrade head
 
       - name: Run tests inside FastAPI container
-        run: docker exec category_server make -C /server prod_test
+        run: docker exec category_server pytest --cache-clear
 
       - name: Run linters inside FastAPI container
-        run: docker exec category_server make -C /server lint
+        run: docker exec category_server isort $(SRC) && black $(SRC) && flake8 $(SRC)
