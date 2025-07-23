@@ -2,7 +2,8 @@ import functools
 import json
 from typing import List
 
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import text
+from sqlmodel import Session
 
 from server import redis_
 from server.schema import Category, CategoryCreate, CategoryTree
@@ -33,20 +34,19 @@ async def get_breadcrumbs(tree, category_id: int) -> List[Category]:
 
 @delete_cache
 async def create_category(
-    session: AsyncSession,
+    session: Session,
     category: CategoryCreate,
 ):
     category = Category.model_validate(category)
     session.add(category)
-    await session.commit()
-    await session.refresh(category)
+    session.commit()
+    session.refresh(category)
     return category
 
 
-from sqlalchemy import text
-
-async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
-    raw_sql = text("""
+async def get_categories_tree_orm(session: Session) -> List[CategoryTree]:
+    raw_sql = text(
+        """
         WITH RECURSIVE "CategoryTree"(id, name, parent_id, level, path) AS (
             SELECT
                 id,
@@ -71,15 +71,16 @@ async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
         SELECT id, name, parent_id, level
         FROM "CategoryTree"
         ORDER BY path;
-    """)
+    """
+    )
 
-    result = await session.exec(raw_sql)
+    result = session.exec(raw_sql)
     rows = result.mappings().all()
 
     return [CategoryTree(**row) for row in rows]
 
 
-async def get_categories_cached(session: AsyncSession) -> List[CategoryTree]:
+async def get_categories_cached(session: Session) -> List[CategoryTree]:
     cached = await redis_.redis_client.get("categories")
     if cached:
         raw_categories = json.loads(cached)
@@ -93,18 +94,18 @@ async def get_categories_cached(session: AsyncSession) -> List[CategoryTree]:
 
 @delete_cache
 async def update_category(
-    session: AsyncSession,
+    session: Session,
     category_id: int,
     name: str,
 ):
-    category = await session.get(Category, category_id)
+    category = session.get(Category, category_id)
     category.name = name
-    await session.commit()
+    session.commit()
     return category
 
 
 @delete_cache
-async def delete_category(session: AsyncSession, category_id: int):
-    category = await session.get(Category, category_id)
-    await session.delete(category)
-    await session.commit()
+async def delete_category(session: Session, category_id: int):
+    category = session.get(Category, category_id)
+    session.delete(category)
+    session.commit()
