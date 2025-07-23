@@ -46,10 +46,10 @@ jobs:
           done
 
       - name: Apply migrations
-        run: docker exec category_server cd ../ && alembic -c /server/alembic.ini upgrade head
+        run: docker exec category_server /bin/bash -c "cd ../ && alembic -c /server/alembic.ini upgrade head"
 
       - name: Run tests inside FastAPI container
-        run: docker exec category_server pytest --cache-clear
+        run: docker exec category_server /bin/bash -c "pytest --cache-clear"
 
       - name: Run linters inside FastAPI container
-        run: docker exec category_server isort $(SRC) && black $(SRC) && flake8 $(SRC)
+        run: docker exec category_server /bin/bash -c "isort $(SRC) && black $(SRC) && flake8 $(SRC)"
