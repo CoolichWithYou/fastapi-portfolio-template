@@ -23,8 +23,6 @@ services:
       - "6379:6379"
     networks:
       - app-network
-    environment:
-      REDIS_URL: ${REDIS_URL}
   fastapi:
     build: ./server
     container_name: category_server
@@ -40,6 +38,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
 
 volumes:
   pgdata:

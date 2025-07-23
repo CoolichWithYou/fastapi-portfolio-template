@@ -14,7 +14,6 @@ class Settings(BaseSettings):
 
     def get_connection(self):
         return (
-            f"postgresql://{self.POSTGRES_USER}:"
-            f"{self.POSTGRES_PASSWORD}"
+            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.POSTGRES_DB}"
         )
