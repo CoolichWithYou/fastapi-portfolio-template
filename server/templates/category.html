@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-<p>Вы находитесь:
 <div>
     {% for crumb in breadcrumbs %}
     {% if loop.last %}
@@ -13,6 +12,10 @@
 </p>
 
 <h2>{{ category.name }}</h2>
+
+<div class="article-content">
+    {{ category.content|safe }}
+</div>
 
 <form method="post" action="/category/{{ category.id }}/update">
     <input name="name" value="{{ category.name }}" maxlength="50" required>

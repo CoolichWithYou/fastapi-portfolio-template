@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     REDIS_URL: str
 
     def get_connection(self):
-        return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.POSTGRES_DB}"
-        )
+        user = self.POSTGRES_USER
+        password = self.POSTGRES_PASSWORD
+        host = self.DB_HOST
+        port = self.DB_PORT
+        db = self.POSTGRES_DB
+        return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"

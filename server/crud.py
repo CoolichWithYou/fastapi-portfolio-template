@@ -2,6 +2,7 @@ import functools
 import json
 from typing import List
 
+from sqlalchemy import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from server import redis_
@@ -31,7 +32,6 @@ async def get_breadcrumbs(tree, category_id: int) -> List[Category]:
     return list(reversed(breadcrumbs))
 
 
-@delete_cache
 async def create_category(
     session: AsyncSession,
     category: CategoryCreate,
@@ -43,10 +43,9 @@ async def create_category(
     return category
 
 
-from sqlalchemy import text
-
 async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
-    raw_sql = text("""
+    raw_sql = text(
+        """
         WITH RECURSIVE "CategoryTree"(id, name, parent_id, level, path) AS (
             SELECT
                 id,
@@ -71,7 +70,8 @@ async def get_categories_tree_orm(session: AsyncSession) -> List[CategoryTree]:
         SELECT id, name, parent_id, level
         FROM "CategoryTree"
         ORDER BY path;
-    """)
+    """
+    )
 
     result = await session.exec(raw_sql)
     rows = result.mappings().all()
@@ -91,7 +91,6 @@ async def get_categories_cached(session: AsyncSession) -> List[CategoryTree]:
     return categories
 
 
-@delete_cache
 async def update_category(
     session: AsyncSession,
     category_id: int,
@@ -103,7 +102,6 @@ async def update_category(
     return category
 
 
-@delete_cache
 async def delete_category(session: AsyncSession, category_id: int):
     category = await session.get(Category, category_id)
     await session.delete(category)
