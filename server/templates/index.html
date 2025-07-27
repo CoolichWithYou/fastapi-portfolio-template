@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<ul>
+
+<div class="categories_tree">
+    <ul class="menu">
     {% for category in categories %}
     <li>
         {% for i in range(category.level) %}
@@ -10,16 +12,17 @@
     </li>
     {% endfor %}
 </ul>
+</div>
 
-<h3>Добавить категорию</h3>
-<form method="post" action="/add">
-    <select name="parent_id">
-        <option value="">— без родителя —</option>
-        {% for cat in categories %}
-        <option value="{{ cat.id }}">{{ cat.name }}</option>
-        {% endfor %}
-    </select>
-    <input name="name" maxlength="50" required>
-    <button type="submit">Добавить</button>
-</form>
+<!--<h3>Добавить категорию</h3>-->
+<!--<form method="post" action="/add">-->
+<!--    <select name="parent_id">-->
+<!--        <option value="">— без родителя —</option>-->
+<!--        {% for cat in categories %}-->
+<!--        <option value="{{ cat.id }}">{{ cat.name }}</option>-->
+<!--        {% endfor %}-->
+<!--    </select>-->
+<!--    <input name="name" maxlength="50" required>-->
+<!--    <button type="submit">Добавить</button>-->
+<!--</form>-->
 {% endblock %}

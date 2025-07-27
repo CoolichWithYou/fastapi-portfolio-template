@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.responses import HTMLResponse
+from starlette.staticfiles import StaticFiles
 
 from server import crud
 from server.background import listen_notifications
@@ -34,6 +35,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.mount("/static", StaticFiles(directory="server/static"), name="static")
 templates = Jinja2Templates(directory="server/templates")
 
 

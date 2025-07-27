@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<div>
+<div class="category_container">
+    <div>
     {% for crumb in breadcrumbs %}
     {% if loop.last %}
     {{ crumb.name }}
@@ -16,13 +17,14 @@
 <div class="article-content">
     {{ category.content|safe }}
 </div>
+</div>
 
-<form method="post" action="/category/{{ category.id }}/update">
-    <input name="name" value="{{ category.name }}" maxlength="50" required>
-    <button type="submit">Сохранить</button>
-</form>
+<!--<form method="post" action="/category/{{ category.id }}/update">-->
+<!--    <input name="name" value="{{ category.name }}" maxlength="50" required>-->
+<!--    <button type="submit">Сохранить</button>-->
+<!--</form>-->
 
-<form method="post" action="/category/{{ category.id }}/delete">
-    <button type="submit">Удалить</button>
-</form>
+<!--<form method="post" action="/category/{{ category.id }}/delete">-->
+<!--    <button type="submit">Удалить</button>-->
+<!--</form>-->
 {% endblock %}
