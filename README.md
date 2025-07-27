@@ -1,7 +1,7 @@
 # resume fastapi project
 
 2. [description](#1-Description)
-3. [env vars](#2-env vars)
+3. [env vars](#2-env-vars)
 4. [endpoints](#3-endpoints)
 5. [diagrams](#4-diagrams)
 
