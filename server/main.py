@@ -35,7 +35,11 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.mount("/static", StaticFiles(directory=settings.STATIC_DIRECTORY), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=settings.STATIC_DIRECTORY),
+    name="static",
+)
 templates = Jinja2Templates(directory="server/templates")
 
 
@@ -82,18 +86,21 @@ async def view_category(
     current_category = await session.get(Category, category_id)
     categories = await get_categories_cached(session)
     breadcrumbs = await crud.get_breadcrumbs(categories, category_id)
+    if current_category.link:
+        return RedirectResponse(current_category.link, status_code=303)
     if current_category.content:
         current_category.content = markdown2.markdown(
             current_category.content, extras=["fenced-code-blocks", "tables"]
         )
-    return templates.TemplateResponse(
-        "category.html",
-        {
-            "request": request,
-            "category": current_category,
-            "breadcrumbs": breadcrumbs,
-        },
-    )
+        return templates.TemplateResponse(
+            "category.html",
+            {
+                "request": request,
+                "category": current_category,
+                "breadcrumbs": breadcrumbs,
+            },
+        )
+    return RedirectResponse("/", status_code=303)
 
 
 @app.post("/category/{category_id}/update")

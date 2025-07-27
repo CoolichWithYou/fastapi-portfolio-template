@@ -1,14 +1,15 @@
 :root {
-    --accent: rgb(65, 177, 43);
+    --accent: wheat;
     --accent-alpha-70: rgba(41, 112, 29, 0.7);
     --accent-alpha-20: rgba(6, 202, 117, 0.2);
     --background: #1d2c1d;
-    --color: white;
+    --color: wheat;
     --border-color: rgba(255, 255, 255, .1);
 }
 
 a, ul, li {
     text-decoration: none;
+    color: wheat;
 }
 
 .menu {

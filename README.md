@@ -1,29 +1,23 @@
-# Category project
+# resume fastapi project
 
-## Содержание
+2. [description](#1-Description)
+3. [env vars](#2-env vars)
+4. [endpoints](#3-endpoints)
+5. [diagrams](#4-diagrams)
 
-1. [Запуск](#1-запуск)
-2. [Описание](#2-описание)
-3. [Переменные среды](#3-переменные-среды)
-4. [Эндпоинты](#4-эндпоинты)
-5. [Диаграммы](#5-диаграммы)
+## 1. Description
 
-## 1. Запуск
+Yet another microservice for resume project
 
-В корне проекта введите `make up`, - это запустит compose файл со всеми контейнерами.
 
-Далее, в терминале введите  
-`docker exec category_server alembic -c ./server/alembic.ini upgrade head`, - для применения миграций из папки version в контейнере.
+<div style="display: flex; flex-direction: column;">
+    <img src="screenshots/photo_2025-07-27_19-52-50.jpg" alt="drawing" width="500px;"/>
+    <img src="screenshots/Screenshot%20from%202025-07-27%2019-53-52.png" alt="drawing" width="500px;"/>
+</div>
 
-Теперь можно переходить на `localhost:8000`, Готово!
+cool features:
+recursive cte for categories:
 
-## 2. Описание
-
-Полноценный микросервис для добавления и отображения категорий.
-
-Для вывода категорий (как на главной, так и на вложенных страницах) используется рекурсивный CTE-запрос в PostgreSQL.
-
-Базовый запрос:
 ```postgresql
 SELECT id,
        name,
@@ -34,12 +28,10 @@ FROM category
 WHERE parent_id IS NULL
 ```
 
-Рекурсивная часть:
-
-в ней мы получаем корневые элементы.
-Начиная от корневых элементов, рекурсией мы проходимся до листьев дерева,
-Одновременно с этим формируется `path` — массив, содержащий путь от корня до текущего элемента. 
-Это важно, чтобы не перепутать категории с одинаковыми названиями, но разными родителями:
+recursive part:
+In first place we're getting the root elements.
+Starting from the root elements, we recurse down to the leaves of the tree.
+At the same time, a `path` is formed — an array containing the path from the root to the current element.
 
 ```postgresql
 SELECT c.id,
@@ -51,45 +43,44 @@ FROM category c
          JOIN "CategoryTree" ct ON c.parent_id = ct.id
 ```
 
-Мы храним результат данного запроса в `redis`, пока не произойдёт изменение данных. 
-При удалении, изменении, добавлении, - кэш очищается. Он появится при следующей
-загрузке страницы. 
+We store the result of this query in redis until the data changes.
+When deleting, changing, or adding, the cache is cleared with `@delete_cache `decorator.
+You can check out db listeners in `server/alembic/versions/7b7f20cf8099_.py` migration.
 
+Some `makefile`commands. You can use any with simple `make` command. Just type `make run` or smth
 
-Ниже приведён список `Makefile` команд. Для запуска нужно находится в корневой папке  
-и перед каждой командой прописать `make`. Например, `make up` для запуска compose'а.
+| Название команды | Краткое описание                                    |
+|-----------------:|:----------------------------------------------------|
+|              run | run redis and db in compose; run server locally     |
+|             lint | check isort, black, flake8                          |
+|             test | run tests                                           |
+|          migrate | migrate all new stuff in versions folder to your db |
+| create migration | create migration file based on your schema          |
+|               up | up compose file                                     |
+|             down | down compose file                                   |
 
-| Название команды | Краткое описание                     |
-|-----------------:|:-------------------------------------|
-|             lint | Проверка isort, black, flake8        |
-|             test | запуск тестов                        |
-|          migrate | применить миграции из папки versions |
-|               up | запустить compose                    |
-|             down | остановить compose                   |
+## 2. env vars
 
-## 3. Переменные среды
+|  env vars/secrets | default value        | Brief description                            |
+|------------------:|:---------------------|----------------------------------------------|
+|           DB_HOST | db                   | address of db (or just name in compose file) |
+|           DB_PORT | 5432                 | db port                                      |
+|       POSTGRES_DB | dbname               | db name                                      |
+|     POSTGRES_USER | username             | db user                                      |
+| POSTGRES_PASSWORD | password             | db password                                  |
+|         REDIS_URL | redis://redis:6379/0 | redis address                                |
+|  STATIC_DIRECTORY | server/static        | static folder                                |
 
-Переменные среды
+## 3. endpoints
 
-| Секрет/перменная среды | Значение по умолчанию | Краткое описание      |
-|-----------------------:|:----------------------|-----------------------|
-|                DB_HOST | db                    | адрес контейнера с бд |
-|                DB_PORT | 5432                  | порт базы данных      |
-|            POSTGRES_DB | dbname                | название базы данных  |
-|          POSTGRES_USER | username              | пользователь бд       |
-|      POSTGRES_PASSWORD | password              | пароль бд             |
-|              REDIS_URL | redis://redis:6379/0  | адрес redis           |
+- `GET /health` - check is server all right;
+- `GET /` - category tree;
+- `GET /category/{category_id}` - category page or link or nothing actually;
+- `POST /add` - add new category;
+- `POST /category/{category_id}/update` - update category name;
+- `POST /category/{category_id}/delete` - delete category, cascade all children;
 
-## 4. Эндпоинты
+## 4. diagrams
 
-- `GET /health` - проверка, не упал ли сервер;
-- `GET /` - первая страница с деревом категорий;
-- `GET /category/{category_id}` - вторая страница с положением категории в каталоге;
-- `POST /add` - добавить категорию;
-- `POST /category/{category_id}/update` - обновить имя категории;
-- `POST /category/{category_id}/delete` - удалить категорию;
-
-## 5. Диаграммы
-
-Архитектурная схема `/diagrams/architecture.png`  
-ER-диаграмма `/diagrams/er.png`
+architecture `/diagrams/architecture.png`  
+er `/diagrams/er.png`
