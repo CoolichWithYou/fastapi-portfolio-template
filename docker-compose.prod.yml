@@ -39,6 +39,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_URL: ${REDIS_URL}
+      STATIC_DIRECTORY: '/server/static'
 
 volumes:
   pgdata:

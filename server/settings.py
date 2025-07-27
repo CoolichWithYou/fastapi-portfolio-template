@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     REDIS_URL: str
+    STATIC_DIRECTORY: str
 
     def get_connection(self):
         user = self.POSTGRES_USER
