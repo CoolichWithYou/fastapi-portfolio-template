@@ -49,7 +49,7 @@ You can check out db listeners in `server/alembic/versions/7b7f20cf8099_.py` mig
 
 Some `makefile`commands. You can use any with simple `make` command. Just type `make run` or smth
 
-| Название команды | Краткое описание                                    |
+|     command name | brief description                                   |
 |-----------------:|:----------------------------------------------------|
 |              run | run redis and db in compose; run server locally     |
 |             lint | check isort, black, flake8                          |
@@ -61,7 +61,7 @@ Some `makefile`commands. You can use any with simple `make` command. Just type `
 
 ## 2. env vars
 
-|  env vars/secrets | default value        | Brief description                            |
+|  env vars/secrets | default value        | brief description                            |
 |------------------:|:---------------------|----------------------------------------------|
 |           DB_HOST | db                   | address of db (or just name in compose file) |
 |           DB_PORT | 5432                 | db port                                      |
